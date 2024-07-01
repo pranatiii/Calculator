@@ -1,6 +1,5 @@
-import React from 'react';
-import Calculator from './Calculator/Calculator.jsx';
-
+import React from "react";
+import Calculator from "./Calculator/Calculator.jsx";
 
 function App() {
   return (
@@ -11,4 +10,3 @@ function App() {
 }
 
 export default App;
-
