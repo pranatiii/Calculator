@@ -1,97 +1,117 @@
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 import './Calculator.css';
 
+const initialState = {
+  currentValue: '0',
+  operator: null,
+  previousValue: null
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'CLEAR':
+      return initialState;
+    case 'BACKCLICK':
+        return  {...state, currentValue: state.currentValue.slice(0, -1)};  
+    case 'INPUT_DIGIT':
+      if (state.currentValue === '0') {
+        return { ...state, currentValue: action.payload };
+      }
+      return { ...state, currentValue: state.currentValue + action.payload };
+    case 'INPUT_DECIMAL':
+      if (!state.currentValue.includes('.')) {
+        return { ...state, currentValue: state.currentValue + '.' };
+      }
+      return state;
+    case 'CHOOSE_OPERATOR':
+      return {
+        ...state,
+        operator: action.payload,
+        previousValue: state.currentValue,
+        currentValue: ''
+      };
+    case 'PERFORM_OPERATION':
+      const { previousValue, currentValue, operator } = state;
+      const prev = parseFloat(previousValue);
+      const current = parseFloat(currentValue);
+      let result = '0';
+      switch (operator) {
+        case '+':
+          result = prev + current;
+          break;
+        case '-':
+          result = prev - current;
+          break;
+        case 'x':
+          result = prev * current;
+          break;
+        case '÷':
+          result = prev / current;
+          break;
+        default:
+          break;
+      }
+      return {
+        ...state,
+        currentValue: String(result),
+        operator: null,
+        previousValue: null
+      };
+    default:
+      return state;
+  }
+};
+
 const Calculator = () => {
-  const [display, setDisplay] = useState('0');
-  const [currentValue, setCurrentValue] = useState('');
-  const [operator, setOperator] = useState(null);
-  const [previousValue, setPreviousValue] = useState('');
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  const handleNumberClick = (value) => {
-    setCurrentValue(currentValue === '' ? value : currentValue + value);
+  const handleDigit = (digit) => {
+    dispatch({ type: 'INPUT_DIGIT', payload: digit });
   };
 
-  const handleOperatorClick = (value) => {
-    if (currentValue === '' && value !== '-') return;
-    if (operator !== null) {
-      const result = calculate(previousValue, currentValue, operator);
-      setPreviousValue(result);
-      setDisplay(result);
-      setCurrentValue('');
-    } else {
-      setPreviousValue(currentValue);
-    }
-    setOperator(value);
-    setCurrentValue('');
+  const handleDecimal = () => {
+    dispatch({ type: 'INPUT_DECIMAL' });
   };
 
-  const calculate = (prev, curr, op) => {
-    const prevNum = parseFloat(prev);
-    const currNum = parseFloat(curr);
-
-    if (isNaN(prevNum) || isNaN(currNum)) return '';
-
-    switch (op) {
-      case '+':
-        return (prevNum + currNum).toString();
-      case '-':
-        return (prevNum - currNum).toString();
-      case 'x':
-        return (prevNum * currNum).toString();
-      case '÷':
-        return (prevNum / currNum).toString();
-      default:
-        return '';
-    }
+  const handleOperator = (operator) => {
+    dispatch({ type: 'CHOOSE_OPERATOR', payload: operator });
   };
 
-  const handleEqualClick = () => {
-    if (currentValue === '' || operator === null) return;
-    const result = calculate(previousValue, currentValue, operator);
-    setDisplay(result);
-    setCurrentValue(result);
-    setOperator(null);
-    setPreviousValue('');
+  const handleClear = () => {
+    dispatch({ type: 'CLEAR' });
   };
 
-  const handleAllClearClick = () => {
-    setDisplay('');
-    setCurrentValue('');
-    setOperator(null);
-    setPreviousValue('');
+  const handleEqual = () => {
+    dispatch({ type: 'PERFORM_OPERATION' });
   };
 
-  const handleBackspaceClick = () => {
-    setCurrentValue(currentValue.slice(0, -1));
-  };
-
-  const handleDecimalClick = () => {
-    if (!currentValue.includes('.')) {
-      setCurrentValue(currentValue + '.');
-    }
+  const handleBackspaceClick = () =>{
+    dispatch({type: 'BACKCLICK'});
   };
 
   return (
     <div className="calculator">
-      <div className="display">{currentValue === '' ? display : currentValue}</div>
-      <button className="button" onClick={handleAllClearClick}>AC</button>
-      <button className="button" onClick={handleBackspaceClick}>⌫</button>
-      <button className="button" onClick={() => handleOperatorClick('÷')}>÷</button>
-      <button className="button" onClick={() => handleNumberClick('7')}>7</button>
-      <button className="button" onClick={() => handleNumberClick('8')}>8</button>
-      <button className="button" onClick={() => handleNumberClick('9')}>9</button>
-      <button className="button" onClick={() => handleOperatorClick('x')}>x</button>
-      <button className="button" onClick={() => handleNumberClick('4')}>4</button>
-      <button className="button" onClick={() => handleNumberClick('5')}>5</button>
-      <button className="button" onClick={() => handleNumberClick('6')}>6</button>
-      <button className="button" onClick={() => handleOperatorClick('-')}>-</button>
-      <button className="button" onClick={() => handleNumberClick('1')}>1</button>
-      <button className="button" onClick={() => handleNumberClick('2')}>2</button>
-      <button className="button" onClick={() => handleNumberClick('3')}>3</button>
-      <button className="button" onClick={() => handleOperatorClick('+')}>+</button>
-      <button className="button" onClick={() => handleNumberClick('0')}>0</button>
-      <button className="button" onClick={handleDecimalClick}>.</button>
-      <button className="button equal" onClick={handleEqualClick}>=</button>
+      <div className="display">{state.currentValue}</div>
+      <div className="buttons">
+        <button className ="clear" onClick={handleClear}>AC</button>
+        <button onClick={handleBackspaceClick}>⌫</button>
+        <button onClick={() => handleOperator('÷')}>÷</button>
+        <button onClick={() => handleDigit('7')}>7</button>
+        <button onClick={() => handleDigit('8')}>8</button>
+        <button onClick={() => handleDigit('9')}>9</button>
+        <button onClick={() => handleOperator('x')}>x</button>
+        <button onClick={() => handleDigit('4')}>4</button>
+        <button onClick={() => handleDigit('5')}>5</button>
+        <button onClick={() => handleDigit('6')}>6</button>
+        <button onClick={() => handleOperator('-')}>-</button>
+        <button onClick={() => handleDigit('1')}>1</button>
+        <button onClick={() => handleDigit('2')}>2</button>
+        <button onClick={() => handleDigit('3')}>3</button>
+        <button onClick={() => handleOperator('+')}>+</button>
+        <button className="zero" onClick={() => handleDigit('0')}>0</button>
+        <button onClick={handleDecimal}>.</button>
+        <button className ="equal" onClick={handleEqual}>=</button>
+      </div>
     </div>
   );
 };
